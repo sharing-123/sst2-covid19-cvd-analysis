@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elevated sST2 After COVID-19 — Analysis Transparency</title>
+<style>
+  :root{
+    --ink:#eaf2ff;
+    --sub:#a9bde0;
+    --card:#0f1530cc;
+    --border:#3b4a7a55;
+    --accent:#8fd3ff;
+    --accent2:#c9a6ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:#05060f;color:var(--ink);font-family:Georgia,'Times New Roman',serif;overflow-x:hidden}
+
+  #sky{position:fixed;inset:0;z-index:0;background:
+      radial-gradient(ellipse at 20% 10%, #1b1440 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 75%, #10163a 0%, transparent 60%),
+      linear-gradient(180deg,#05060f 0%,#0b1130 45%,#1b1440 100%);
+    animation:drift 40s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    0%{background-position:0% 0%, 0% 0%, 0% 0%}
+    100%{background-position:5% 3%, -4% -2%, 0% 0%}
+  }
+
+  .stars{position:fixed;inset:0;z-index:1}
+  .star{position:absolute;background:#fff;border-radius:50%;
+    animation:twinkle linear infinite;}
+  @keyframes twinkle{
+    0%,100%{opacity:.15}
+    50%{opacity:1}
+  }
+
+  .shooting{position:fixed;z-index:1;width:2px;height:2px;background:#fff;border-radius:50%;
+    box-shadow:0 0 6px 2px #cfe6ff;
+    animation:shoot linear infinite;
+    opacity:0;
+  }
+  @keyframes shoot{
+    0%{transform:translate(0,0);opacity:0}
+    2%{opacity:1}
+    18%{transform:translate(520px,220px);opacity:0}
+    100%{opacity:0}
+  }
+
+  main{position:relative;z-index:2;max-width:880px;margin:0 auto;padding:80px 24px 120px}
+
+  h1{font-size:2.5rem;line-height:1.2;text-align:center;margin:0 0 6px;
+     background:linear-gradient(90deg,#ffffff,var(--accent));
+     -webkit-background-clip:text;background-clip:text;color:transparent;
+     animation:glow 5s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%,100%{filter:drop-shadow(0 0 6px rgba(143,211,255,.25))}
+    50%{filter:drop-shadow(0 0 16px rgba(143,211,255,.55))}
+  }
+  h2.sub{text-align:center;font-weight:normal;color:var(--sub);font-size:1.05rem;margin:0 0 56px;letter-spacing:.02em}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:28px 30px;margin:0 0 22px;backdrop-filter:blur(6px);
+    opacity:0;transform:translateY(16px);
+    animation:rise .8s ease forwards;
+  }
+  .card:nth-of-type(1){animation-delay:.05s}
+  .card:nth-of-type(2){animation-delay:.15s}
+  .card:nth-of-type(3){animation-delay:.25s}
+  .card:nth-of-type(4){animation-delay:.35s}
+  @keyframes rise{to{opacity:1;transform:translateY(0)}}
+
+  .card h3{margin:0 0 10px;font-size:1.15rem;color:var(--accent)}
+  .card p{margin:0;color:#d7e2ff;line-height:1.65;font-size:.98rem}
+  .card ul{margin:10px 0 0;padding-left:20px;color:#d7e2ff;line-height:1.7;font-size:.98rem}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.75rem;
+    border:1px solid var(--accent2);color:var(--accent2);margin-right:8px}
+
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:36px 0 0}
+  .btn{padding:12px 22px;border-radius:10px;text-decoration:none;font-family:Georgia,serif;
+    border:1px solid var(--border);color:var(--ink);transition:transform .2s, box-shadow .2s}
+  .btn.primary{background:linear-gradient(90deg,#3550a0,#5b3fa0);border-color:transparent}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(143,211,255,.18)}
+
+  footer{position:relative;z-index:2;text-align:center;color:#7f8fbd;font-size:.85rem;padding:0 24px 50px}
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div class="stars" id="stars"></div>
+<div class="shooting" style="top:12%;left:8%;animation-duration:7s;animation-delay:1s"></div>
+<div class="shooting" style="top:28%;left:55%;animation-duration:9s;animation-delay:4s"></div>
+<div class="shooting" style="top:60%;left:20%;animation-duration:8s;animation-delay:6.5s"></div>
+
+<main>
+  <h1>Elevated sST2 After COVID-19</h1>
+  <h2 class="sub">Analysis transparency for a study in patients with cardiovascular comorbidities</h2>
+
+  <div class="card">
+    <h3>What this page is</h3>
+    <p>This is a companion transparency page for the manuscript
+      <em>"Elevated Soluble ST2 Three Months After COVID-19 Infection in Patients With Cardiovascular Comorbidities."</em>
+      It documents how the reported statistics were produced, so the analysis can be followed and checked independently of the paper text.</p>
+  </div>
+
+  <div class="card">
+    <h3>What is included</h3>
+    <span class="badge">SPSS syntax</span><span class="badge">Method reconstruction</span>
+    <ul>
+      <li>A complete, reconstructed IBM SPSS Statistics syntax file covering normality testing, group comparisons (ANOVA/Kruskal&ndash;Wallis with post-hoc pairwise tests), correlation analysis, and the multivariable linear regression reported in the manuscript.</li>
+      <li>The syntax is reconstructed from the Methods section of the manuscript for transparency and reproducibility of the statistical approach &mdash; it mirrors the described plan step by step.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>What is deliberately not included</h3>
+    <ul>
+      <li>No patient-level or raw data. The study involves clinical data collected under ethics approval (National Cardiovascular Centre Harapan Kita Hospital Medicine Ethics Committee), and individual records are not shared here.</li>
+      <li>No identifying information of any kind.</li>
+    </ul>
+  </div>
+
+  <div class="cta">
+    <a class="btn primary" href="../">View the repository</a>
+    <a class="btn" href="../syntax/reconstructed_analysis.sps">Open the SPSS syntax</a>
+  </div>
+</main>
+
+<footer>
+  Companion page for a manuscript submission &middot; content reconstructed for transparency, not the original analyst's run history.
+</footer>
+
+<script>
+  var field = document.getElementById('stars');
+  var n = 140;
+  for (var i = 0; i < n; i++){
+    var s = document.createElement('div');
+    s.className = 'star';
+    var size = (Math.random() * 1.6 + 0.6).toFixed(2);
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.top = (Math.random() * 100) + '%';
+    s.style.animationDuration = (2 + Math.random() * 4).toFixed(2) + 's';
+    s.style.animationDelay = (Math.random() * 4).toFixed(2) + 's';
+    field.appendChild(s);
+  }
+</script>
+</body>
+</html>

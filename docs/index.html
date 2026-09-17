@@ -116,10 +116,11 @@
 
   <div class="card">
     <h3>What is included</h3>
-    <span class="badge">SPSS syntax</span><span class="badge">Method reconstruction</span><span class="badge">Interactive figures</span>
+    <span class="badge">SPSS syntax</span><span class="badge">Method reconstruction</span><span class="badge">Interactive figures</span><span class="badge">Supplementary analysis</span>
     <ul>
       <li>A complete, reconstructed IBM SPSS Statistics syntax file covering normality testing, group comparisons (ANOVA/Kruskal&ndash;Wallis with post-hoc pairwise tests), correlation analysis, and the multivariable linear regression reported in the manuscript.</li>
-      <li>Interactive charts and a sortable table below, built directly from the group-level summary statistics reported in the manuscript's Tables 1&ndash;3.</li>
+      <li>A second syntax file plus a short Python script covering the manuscript's Supplementary Statistical Analysis: confounder-adjusted (ANCOVA) group comparison, regression diagnostics and a log-transformed sensitivity model, a restricted-cubic-spline nonlinearity check, a logistic-regression/ROC threshold analysis, correlation with additional biomarkers, and a multiple-imputation sensitivity analysis.</li>
+      <li>Interactive charts and a sortable table below, built directly from the group-level summary statistics reported in the manuscript's Tables 1&ndash;3 and its Supplementary Statistical Analysis.</li>
       <li>The syntax is reconstructed from the Methods section of the manuscript for transparency and reproducibility of the statistical approach &mdash; it mirrors the described plan step by step.</li>
     </ul>
   </div>
@@ -144,9 +145,39 @@
   <p class="section-note">Multivariable linear regression, unstandardized coefficients (Table 3). Bars in accent colour reached statistical significance (p &lt; 0.05).</p>
   <div class="card chart"><div id="chart-reg" class="plot tall"></div></div>
 
+  <div class="card">
+    <h3>Supplementary Statistical Analysis</h3>
+    <p>The six sections below extend the primary results with confounder adjustment, model diagnostics, nonlinearity and threshold checks, additional biomarker correlations, and a missing-data sensitivity analysis. Every figure uses group-level summary statistics from <a href="supplementary_summary_stats.json" style="color:var(--accent)">supplementary_summary_stats.json</a>, reconstructed from the manuscript's Supplementary Statistical Analysis document.</p>
+  </div>
+
+  <h2 class="section">S1 &middot; Confounder-adjusted group comparison (ANCOVA)</h2>
+  <p class="section-note">Estimated marginal means of sST2 adjusted for age, sex, DM, hypertension, CAD, and obesity. F(2,153) = 16.72, p &lt; 0.001, partial &eta;&sup2; = 0.18. Every pairwise difference remained significant after Bonferroni correction.</p>
+  <div class="card chart"><div id="chart-ancova" class="plot"></div></div>
+
+  <h2 class="section">S2 &middot; Regression diagnostics</h2>
+  <p class="section-note">Variance inflation factors for the Table 3 predictor set. All values stay well below the common threshold of 5, indicating no meaningful multicollinearity.</p>
+  <div class="card chart"><div id="chart-vif" class="plot"></div></div>
+
+  <h2 class="section">S3 &middot; Is the PaO&#8322;/Ct relationship linear?</h2>
+  <p class="section-note">Restricted cubic spline (3 df), predicted sST2 with 95% CI, each holding the other variable at its median. A flat-then-declining curve would suggest the association is not strictly linear.</p>
+  <div class="card chart"><div id="chart-rcs" class="plot tall"></div></div>
+
+  <h2 class="section">S4 &middot; ROC threshold analysis</h2>
+  <p class="section-note">Predicting a high sST2 concentration (upper quartile, &gt;2840.9 pg/mL) from admission PaO&#8322; and Ct value. Youden-optimal cutoffs: PaO&#8322; &le; 87.8 mmHg, Ct &le; 18.4.</p>
+  <div class="card chart"><div id="chart-roc" class="plot tall"></div></div>
+
+  <h2 class="section">S5 &middot; Correlation with additional biomarkers</h2>
+  <p class="section-note">Spearman correlation with sST2 among case-group patients with available values. None reach significance, consistent with excluding these biomarkers from the primary model.</p>
+  <div class="card chart"><div id="chart-biomarker" class="plot"></div></div>
+
+  <h2 class="section">S6 &middot; Multiple imputation sensitivity analysis</h2>
+  <p class="section-note">Complete-case vs. multiple-imputation (MICE, 30 imputations) coefficients after adding hs-CRP, D-dimer, NT-proBNP, and troponin back into the model. PaO&#8322; and Ct value stay independently significant either way.</p>
+  <div class="card chart"><div id="chart-mice" class="plot tall"></div></div>
+
   <div class="cta">
     <a class="btn primary" href="https://github.com/sharing-123/sst2-covid19-cvd-analysis">View the repository</a>
     <a class="btn" href="https://github.com/sharing-123/sst2-covid19-cvd-analysis/blob/master/syntax/reconstructed_analysis.sps">Open the SPSS syntax</a>
+    <a class="btn" href="https://github.com/sharing-123/sst2-covid19-cvd-analysis/blob/master/syntax/supplementary_analysis.sps">Open the supplementary syntax</a>
   </div>
 </main>
 
@@ -240,6 +271,101 @@
     yaxis: { gridcolor: '#2a335c', automargin: true },
     margin: { t: 30, r: 60, b: 50, l: 170 }
   }), plotConfig);
+
+  fetch('supplementary_summary_stats.json').then(function(r){ return r.json(); }).then(function(S){
+
+    // S1: ANCOVA adjusted means with 95% CI
+    var g = S.ancova;
+    var err = g.adjusted_mean.map(function(m, i){ return g.ci_upper[i] - m; });
+    var errMinus = g.adjusted_mean.map(function(m, i){ return m - g.ci_lower[i]; });
+    Plotly.newPlot('chart-ancova', [{
+      x: g.groups, y: g.adjusted_mean, type: 'bar',
+      error_y: { type: 'data', symmetric: false, array: err, arrayminus: errMinus, color: '#8fd3ff', thickness: 1.5, width: 6 },
+      marker: { color: ['#8fd3ff', '#7c8fd8', '#c9a6ff'] },
+      hovertemplate: '%{x}<br>adjusted mean = %{y:.1f} pg/mL<extra></extra>'
+    }], Object.assign({}, commonLayout, {
+      yaxis: { title: 'Adjusted sST2, pg/mL', gridcolor: '#2a335c' },
+      xaxis: { gridcolor: '#2a335c' }
+    }), plotConfig);
+
+    // S2: VIF bar chart
+    var vifVars = Object.keys(S.diagnostics.vif);
+    var vifVals = vifVars.map(function(k){ return S.diagnostics.vif[k]; });
+    Plotly.newPlot('chart-vif', [{
+      x: vifVals, y: vifVars, type: 'bar', orientation: 'h',
+      marker: { color: '#8fd3ff' },
+      hovertemplate: '%{y}<br>VIF = %{x:.2f}<extra></extra>'
+    }], Object.assign({}, commonLayout, {
+      xaxis: { title: 'Variance inflation factor', gridcolor: '#2a335c', range: [0, 2] },
+      yaxis: { gridcolor: '#2a335c', automargin: true },
+      shapes: [{ type: 'line', x0: 5, x1: 5, y0: -0.5, y1: vifVars.length - 0.5, line: { color: '#c9a6ff', dash: 'dot' } }],
+      margin: { t: 30, r: 40, b: 50, l: 170 }
+    }), plotConfig);
+
+    // S3: RCS curves
+    var r = S.rcs;
+    var pao2Band = r.pao2_x.concat(r.pao2_x.slice().reverse());
+    var pao2BandY = r.pao2_hi.concat(r.pao2_lo.slice().reverse());
+    var ctBand = r.ct_x.concat(r.ct_x.slice().reverse());
+    var ctBandY = r.ct_hi.concat(r.ct_lo.slice().reverse());
+    Plotly.newPlot('chart-rcs', [
+      { x: pao2Band, y: pao2BandY, fill: 'toself', fillcolor: 'rgba(143,211,255,0.15)', line: { color: 'transparent' }, showlegend: false, hoverinfo: 'skip', xaxis: 'x', yaxis: 'y' },
+      { x: r.pao2_x, y: r.pao2_mean, type: 'scatter', mode: 'lines', line: { color: '#8fd3ff', width: 3 }, name: 'PaO₂', xaxis: 'x', yaxis: 'y' },
+      { x: ctBand, y: ctBandY, fill: 'toself', fillcolor: 'rgba(201,166,255,0.15)', line: { color: 'transparent' }, showlegend: false, hoverinfo: 'skip', xaxis: 'x2', yaxis: 'y2' },
+      { x: r.ct_x, y: r.ct_mean, type: 'scatter', mode: 'lines', line: { color: '#c9a6ff', width: 3 }, name: 'Ct value', xaxis: 'x2', yaxis: 'y2' }
+    ], Object.assign({}, commonLayout, {
+      grid: { rows: 1, columns: 2, pattern: 'independent' },
+      xaxis: { title: 'Admission PaO₂, mmHg', gridcolor: '#2a335c', domain: [0, 0.46] },
+      xaxis2: { title: 'Admission Ct value', gridcolor: '#2a335c', domain: [0.54, 1] },
+      yaxis: { title: 'Predicted sST2, pg/mL', gridcolor: '#2a335c' },
+      yaxis2: { gridcolor: '#2a335c', matches: 'y' },
+      showlegend: false
+    }), plotConfig);
+
+    // S4: ROC curves
+    var roc = S.roc;
+    Plotly.newPlot('chart-roc', [
+      { x: roc.pao2.fpr, y: roc.pao2.tpr, type: 'scatter', mode: 'lines', line: { color: '#8fd3ff', width: 3 }, name: 'PaO₂ (AUC ' + roc.pao2.auc + ')' },
+      { x: roc.ct_value.fpr, y: roc.ct_value.tpr, type: 'scatter', mode: 'lines', line: { color: '#c9a6ff', width: 3 }, name: 'Ct value (AUC ' + roc.ct_value.auc + ')' },
+      { x: [0, 1], y: [0, 1], type: 'scatter', mode: 'lines', line: { color: '#5a6bb5', dash: 'dot', width: 1 }, showlegend: false, hoverinfo: 'skip' }
+    ], Object.assign({}, commonLayout, {
+      xaxis: { title: '1 − Specificity', gridcolor: '#2a335c', range: [0, 1] },
+      yaxis: { title: 'Sensitivity', gridcolor: '#2a335c', range: [0, 1] },
+      legend: { x: 0.55, y: 0.08, font: { color: '#eaf2ff' } }
+    }), plotConfig);
+
+    // S5: biomarker correlation
+    var bio = S.biomarker_correlation;
+    Plotly.newPlot('chart-biomarker', [{
+      x: bio.map(function(b){ return b.rho; }),
+      y: bio.map(function(b){ return b.biomarker + ' (n=' + b.n + ')'; }),
+      type: 'bar', orientation: 'h',
+      marker: { color: '#4a5590' },
+      text: bio.map(function(b){ return 'p=' + b.p; }),
+      textposition: 'outside', textfont: { color: '#eaf2ff' },
+      hovertemplate: '%{y}<br>Spearman ρ = %{x:.3f}<extra></extra>'
+    }], Object.assign({}, commonLayout, {
+      xaxis: { title: 'Spearman correlation with sST2', gridcolor: '#2a335c', zerolinecolor: '#5a6bb5', range: [-0.4, 0.4] },
+      yaxis: { gridcolor: '#2a335c', automargin: true },
+      margin: { t: 30, r: 60, b: 50, l: 190 }
+    }), plotConfig);
+
+    // S6: multiple imputation comparison
+    var mi = S.multiple_imputation;
+    var miErr = mi.vars.map(function(v, i){ return mi.mice_ci_upper[i] - mi.mice_pooled_coef[i]; });
+    var miErrMinus = mi.vars.map(function(v, i){ return mi.mice_pooled_coef[i] - mi.mice_ci_lower[i]; });
+    Plotly.newPlot('chart-mice', [
+      { x: mi.vars, y: mi.complete_case_coef, type: 'bar', name: 'Complete case', marker: { color: '#4a5590' } },
+      { x: mi.vars, y: mi.mice_pooled_coef, type: 'bar', name: 'MICE pooled (30 imputations)', marker: { color: '#8fd3ff' },
+        error_y: { type: 'data', symmetric: false, array: miErr, arrayminus: miErrMinus, color: '#eaf2ff', thickness: 1.5, width: 6 } }
+    ], Object.assign({}, commonLayout, {
+      barmode: 'group',
+      yaxis: { title: 'Coefficient on sST2', gridcolor: '#2a335c', zerolinecolor: '#5a6bb5' },
+      xaxis: { gridcolor: '#2a335c' },
+      legend: { x: 0.02, y: 1.12, orientation: 'h', font: { color: '#eaf2ff' } }
+    }), plotConfig);
+
+  }).catch(function(err){ console.error('Failed to load supplementary_summary_stats.json', err); });
 </script>
 </body>
 </html>
